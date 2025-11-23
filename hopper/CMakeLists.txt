@@ -64,6 +64,8 @@ message(STATUS "Compiling ${KERNEL_COUNT} kernel variants (FP16 hdim128 + FP8 hd
 
 # 直接创建可执行文件，不使用动态库
 # 这样可以让链接器在编译时解决所有符号引用，避免undefined reference
+
+# Varlen (variable-length) test
 add_executable(test_varlen_inference
     test_varlen_inference.cpp
     flash_api_standalone.cpp
@@ -71,7 +73,6 @@ add_executable(test_varlen_inference
     ${KERNEL_SOURCES}
 )
 
-# 设置CUDA分离编译
 set_target_properties(test_varlen_inference PROPERTIES
     CUDA_SEPARABLE_COMPILATION ON
 )
@@ -81,8 +82,25 @@ target_link_libraries(test_varlen_inference
     CUDA::curand
 )
 
+# Dense (fixed-length) test
+add_executable(test_dense_inference
+    test_dense_inference.cpp
+    flash_api_standalone.cpp
+    flash_prepare_scheduler.cu
+    ${KERNEL_SOURCES}
+)
+
+set_target_properties(test_dense_inference PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+)
+
+target_link_libraries(test_dense_inference
+    CUDA::cudart
+    CUDA::curand
+)
+
 # 安装规则
-install(TARGETS test_varlen_inference
+install(TARGETS test_varlen_inference test_dense_inference
     RUNTIME DESTINATION bin
 )
 
