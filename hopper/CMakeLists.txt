@@ -40,13 +40,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 add_definitions(-DFLASHATTENTION_DISABLE_BACKWARD)
 # 只编译SM90代码，禁用SM80/SM86分支，避免链接SM80/SM86 kernel
 add_definitions(-DFLASHATTENTION_DISABLE_SM8x)
-# 启用CUTLASS SM90a支持 (WGMMA指令)
-add_definitions(-DCUTE_ARCH_MMA_SM90A_ENABLED)
-# 禁用CUTLASS调试日志避免__host__ __device__冲突
-add_definitions(-DCUTLASS_DEBUG_TRACE_LEVEL=0)
-# HACK: 重新定义CUTLASS_DEVICE为CUTE_HOST_DEVICE来绕过synclog的__device__限制
-# 这会让synclog函数变成__host__ __device__，允许从任何地方调用
-add_definitions(-DCUTLASS_DEVICE=CUTE_HOST_DEVICE)
+# 注意: 不要定义CUTE_ARCH_MMA_SM90A_ENABLED！
+# 这个宏会启用CUTLASS synclog调用，导致__device__函数从__host__ __device__调用的编译错误
+# SM90 WGMMA指令会在编译时通过__CUDA_ARCH__自动检测并启用
 
 # 极简版本：只支持两种配置
 # - FP8 E4M3, head_dim=96
