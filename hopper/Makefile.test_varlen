@@ -1,0 +1,53 @@
+# Makefile for FlashAttention Varlen Inference Test
+
+CXX = g++
+NVCC = nvcc
+
+# CUDA paths
+CUDA_PATH ?= /usr/local/cuda
+CUTLASS_PATH = ../cutlass/include
+
+# Compiler flags
+CXXFLAGS = -std=c++17 -O3 -I$(CUDA_PATH)/include -I.. -I$(CUTLASS_PATH)
+NVCCFLAGS = -std=c++17 -O3 -arch=sm_90 -I.. -I$(CUTLASS_PATH)
+LDFLAGS = -L$(CUDA_PATH)/lib64 -lcudart -lcurand
+
+# Source files
+STANDALONE_SRC = flash_api_standalone.cpp
+TEST_SRC = test_varlen_inference.cpp
+
+# Object files
+STANDALONE_OBJ = flash_api_standalone.o
+TEST_OBJ = test_varlen_inference.o
+
+# Target executable
+TARGET = test_varlen_inference
+
+# Default target
+all: $(TARGET)
+
+# Compile standalone API
+$(STANDALONE_OBJ): $(STANDALONE_SRC)
+	$(NVCC) $(NVCCFLAGS) -c $< -o $@
+
+# Compile test program
+$(TEST_OBJ): $(TEST_SRC)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# Link executable
+$(TARGET): $(STANDALONE_OBJ) $(TEST_OBJ)
+	$(NVCC) $(NVCCFLAGS) $^ -o $@ $(LDFLAGS)
+
+# Run test
+run: $(TARGET)
+	./$(TARGET)
+
+# Run with custom parameters
+run-custom: $(TARGET)
+	./$(TARGET) --batch_size 4 --max_seqlen_q 1024 --max_seqlen_k 1024 --num_heads 16 --head_size 64 --causal
+
+# Clean
+clean:
+	rm -f $(STANDALONE_OBJ) $(TEST_OBJ) $(TARGET)
+
+.PHONY: all run run-custom clean

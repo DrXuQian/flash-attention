@@ -1,0 +1,24 @@
+# Build directories
+build/
+build_*/
+*.o
+*.so
+*.a
+
+# Compiled executables
+test_varlen_inference
+test_fp8_flash_attn
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# Compilation logs
+*.log
+
+# Temporary files
+*.swp
+*.swo
+*~
