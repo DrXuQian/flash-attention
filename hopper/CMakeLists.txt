@@ -8,6 +8,9 @@ set(CMAKE_CUDA_STANDARD 17)
 # 启用CUDA
 enable_language(CUDA)
 
+# 查找CUDA包
+find_package(CUDAToolkit REQUIRED)
+
 # CUDA架构设置 (Hopper SM90)
 set(CMAKE_CUDA_ARCHITECTURES 90)
 
@@ -26,6 +29,7 @@ include_directories(
 # 库目录
 link_directories(
     ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES}
+    /usr/local/cuda/lib64
 )
 
 # 编译选项
@@ -77,7 +81,7 @@ add_library(flash_attn_standalone SHARED
 )
 
 target_link_libraries(flash_attn_standalone
-    cudart
+    CUDA::cudart
 )
 
 # 设置输出目录
@@ -92,8 +96,8 @@ add_executable(test_varlen_inference
 
 target_link_libraries(test_varlen_inference
     flash_attn_standalone
-    cudart
-    curand
+    CUDA::cudart
+    CUDA::curand
 )
 
 # 安装规则
