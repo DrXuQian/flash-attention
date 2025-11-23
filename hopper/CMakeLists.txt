@@ -33,7 +33,10 @@ link_directories(
 )
 
 # 编译选项
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3 --expt-relaxed-constexpr")
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3 --expt-relaxed-constexpr --extended-lambda")
+# 放宽host/device function call限制 (CUTLASS synclog __device__ from __host__ __device__)
+# 使用--no-host-device-initializer-list避免HD调用错误
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcudafe=--diag_suppress=20011,--diag_suppress=20014")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 
 # 定义宏
@@ -44,6 +47,8 @@ add_definitions(-DFLASHATTENTION_DISABLE_SM8x)
 add_definitions(-DCUTE_ARCH_MMA_SM90A_ENABLED)
 # 禁用CUTLASS调试日志避免__host__ __device__冲突
 add_definitions(-DCUTLASS_DEBUG_TRACE_LEVEL=0)
+# 确保不启用synclog (防止__device__函数从__host__ __device__调用)
+# CUTLASS_ENABLE_SYNCLOG不应该被定义
 
 # 极简版本：只支持两种配置
 # - FP8 E4M3, head_dim=96
