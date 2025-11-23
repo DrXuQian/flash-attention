@@ -217,8 +217,14 @@ int main(int argc, char** argv) {
     cudaStream_t stream;
     cudaStreamCreate(&stream);
 
-    // Warmup run
-    std::cout << "Running warmup...\n";
+    // Single run
+    std::cout << "Running attention kernel...\n";
+
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+
+    cudaEventRecord(start, stream);
     mha_fwd_standalone(
         d_q, d_k, d_v,
         nullptr, nullptr, nullptr,  // k_new, v_new, q_v
@@ -255,64 +261,20 @@ int main(int argc, char** argv) {
         nullptr, nullptr,  // out_accum, softmax_lse_accum (for splits)
         stream
     );
-    cudaStreamSynchronize(stream);
-
-    // Benchmark runs
-    int num_runs = 10;
-    std::cout << "Running " << num_runs << " iterations for benchmarking...\n";
-
-    cudaEvent_t start, stop;
-    cudaEventCreate(&start);
-    cudaEventCreate(&stop);
-
-    cudaEventRecord(start, stream);
-    for (int i = 0; i < num_runs; i++) {
-        mha_fwd_standalone(
-            d_q, d_k, d_v,
-            nullptr, nullptr, nullptr,
-            d_out,
-            d_cu_seqlens_q, d_cu_seqlens_k, nullptr,
-            nullptr, nullptr,
-            max_seqlen_q, max_seqlen_k,
-            nullptr, nullptr, nullptr,
-            nullptr, nullptr, nullptr,
-            nullptr, nullptr, nullptr,
-            d_scheduler_metadata,
-            is_bf16, is_e4m3,
-            batch_size, total_q, num_heads, head_size,
-            batch_size, total_k, num_heads_k, head_size_v,
-            0, 0, 0, 0,
-            0, q_row_stride, q_head_stride,
-            0, k_row_stride, k_head_stride,
-            0, v_row_stride, v_head_stride,
-            0, o_row_stride, o_head_stride,
-            0, 0, 0, 0, 0, 0,
-            0, 0, 0,
-            0,
-            0, 0, 0, 0, 0, 0,
-            -1.0, is_causal,
-            -1, -1, 0, 0.0, false,
-            -1, -1, 0,
-            d_softmax_lse,
-            nullptr, nullptr,
-            stream
-        );
-    }
     cudaEventRecord(stop, stream);
     cudaStreamSynchronize(stream);
 
     float milliseconds = 0;
     cudaEventElapsedTime(&milliseconds, start, stop);
-    float avg_time = milliseconds / num_runs;
 
     // Calculate FLOPs and bandwidth
     // Attention FLOPs ≈ 4 * total_q * total_k * head_size * num_heads
     double flops = 4.0 * total_q * total_k * head_size * num_heads;
-    double tflops = flops / (avg_time * 1e9);  // TFLOP/s
+    double tflops = flops / (milliseconds * 1e9);  // TFLOP/s
 
     std::cout << "\nResults:\n"
               << "========\n"
-              << "Average time: " << avg_time << " ms\n"
+              << "Execution time: " << milliseconds << " ms\n"
               << "Throughput: " << tflops << " TFLOP/s\n";
 
     // Cleanup
