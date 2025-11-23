@@ -34,9 +34,6 @@ link_directories(
 
 # 编译选项
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3 --expt-relaxed-constexpr --extended-lambda")
-# 放宽host/device function call限制 (CUTLASS synclog __device__ from __host__ __device__)
-# 诊断代码: 20011=calling __device__ from __host____device__, 20014=calling __host__ from __device__
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --diag-suppress 20011 --diag-suppress 20014")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 
 # 定义宏
@@ -47,8 +44,9 @@ add_definitions(-DFLASHATTENTION_DISABLE_SM8x)
 add_definitions(-DCUTE_ARCH_MMA_SM90A_ENABLED)
 # 禁用CUTLASS调试日志避免__host__ __device__冲突
 add_definitions(-DCUTLASS_DEBUG_TRACE_LEVEL=0)
-# 确保不启用synclog (防止__device__函数从__host__ __device__调用)
-# CUTLASS_ENABLE_SYNCLOG不应该被定义
+# HACK: 重新定义CUTLASS_DEVICE为CUTE_HOST_DEVICE来绕过synclog的__device__限制
+# 这会让synclog函数变成__host__ __device__，允许从任何地方调用
+add_definitions(-DCUTLASS_DEVICE=CUTE_HOST_DEVICE)
 
 # 极简版本：只支持两种配置
 # - FP8 E4M3, head_dim=96
