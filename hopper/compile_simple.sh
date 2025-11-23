@@ -20,6 +20,7 @@ g++ -c -std=c++17 -O3 \
 echo "Step 2: Compiling minimal kernel (hdim64_fp16_sm90)..."
 nvcc -std=c++17 -O2 \
   -arch=sm_90 \
+  --expt-relaxed-constexpr \
   -I${CUDA_PATH}/include \
   -I${FA_PATH} \
   -I${CUTLASS_PATH} \

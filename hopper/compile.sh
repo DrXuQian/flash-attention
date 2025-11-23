@@ -9,6 +9,7 @@ FA_PATH=..
 echo "Compiling flash_api_standalone.cpp..."
 nvcc -std=c++17 -O3 \
   -arch=sm_90 \
+  --expt-relaxed-constexpr \
   -I${CUDA_PATH}/include \
   -I${FA_PATH} \
   -I${CUTLASS_PATH} \
@@ -20,6 +21,7 @@ nvcc -std=c++17 -O3 \
 echo "Compiling test_varlen_inference.cpp..."
 nvcc -std=c++17 -O3 \
   -arch=sm_90 \
+  --expt-relaxed-constexpr \
   -I${CUDA_PATH}/include \
   -I${FA_PATH} \
   -I${CUTLASS_PATH} \
