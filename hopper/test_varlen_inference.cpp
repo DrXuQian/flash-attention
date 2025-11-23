@@ -139,19 +139,16 @@ int main(int argc, char** argv) {
               << "Data type: " << (is_e4m3 ? "FP8" : (is_bf16 ? "BF16" : "FP16")) << "\n"
               << "Causal: " << (is_causal ? "Yes" : "No") << "\n\n";
 
-    // Generate random sequence lengths for varlen
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<> seqlen_dist(64, max_seqlen_q);
-
+    // Use fixed sequence lengths equal to max_seqlen
+    // This ensures consistent benchmarking with the specified parameters
     std::vector<int> seqlens_q(batch_size);
     std::vector<int> seqlens_k(batch_size);
     int total_q = 0, total_k = 0;
 
-    std::cout << "Sequence lengths:\n";
+    std::cout << "Sequence lengths (all fixed to max_seqlen):\n";
     for (int i = 0; i < batch_size; i++) {
-        seqlens_q[i] = seqlen_dist(gen);
-        seqlens_k[i] = seqlen_dist(gen);
+        seqlens_q[i] = max_seqlen_q;
+        seqlens_k[i] = max_seqlen_k;
         total_q += seqlens_q[i];
         total_k += seqlens_k[i];
         std::cout << "  Batch " << i << ": Q=" << seqlens_q[i] << ", K=" << seqlens_k[i] << "\n";
