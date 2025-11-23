@@ -38,6 +38,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 
 # 定义宏
 add_definitions(-DFLASHATTENTION_DISABLE_BACKWARD)
+# 只编译SM90代码，禁用SM80/SM86分支，避免链接SM80/SM86 kernel
+add_definitions(-DFLASHATTENTION_DISABLE_SM8x)
 
 # 方案2：只包含常用的kernel组合
 # 编译时间: 10-20分钟，内存需求: 16GB
