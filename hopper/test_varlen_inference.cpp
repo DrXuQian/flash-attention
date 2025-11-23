@@ -177,6 +177,7 @@ int main(int argc, char** argv) {
     void *d_q, *d_k, *d_v, *d_out;
     void *d_cu_seqlens_q, *d_cu_seqlens_k;
     void *d_softmax_lse;
+    void *d_scheduler_metadata;
 
     cudaMalloc(&d_q, total_q * num_heads * head_size * dtype_size);
     cudaMalloc(&d_k, total_k * num_heads_k * head_size * dtype_size);
@@ -188,6 +189,12 @@ int main(int argc, char** argv) {
 
     // softmax_lse: (num_heads, total_q) for varlen
     cudaMalloc(&d_softmax_lse, num_heads * total_q * sizeof(float));
+
+    // Scheduler metadata for varlen attention
+    // Size calculation: b_rounded * num_prepare_batch_vectors + tile_count_semaphore_offset
+    // Allocate generous buffer: 1024 int32 values
+    cudaMalloc(&d_scheduler_metadata, 1024 * sizeof(int));
+    cudaMemset(d_scheduler_metadata, 0, 1024 * sizeof(int));
 
     // Copy cu_seqlens to device
     cudaMemcpy(d_cu_seqlens_q, cu_seqlens_q.data(), (batch_size + 1) * sizeof(int), cudaMemcpyHostToDevice);
@@ -225,7 +232,7 @@ int main(int argc, char** argv) {
         nullptr, nullptr, nullptr,  // page_table, kv_batch_idx, leftpad_k
         nullptr, nullptr, nullptr,  // rotary
         nullptr, nullptr, nullptr,  // FP8 descale
-        nullptr,  // scheduler_metadata
+        d_scheduler_metadata,  // scheduler_metadata
         is_bf16, is_e4m3,
         batch_size, total_q, num_heads, head_size,  // Q dims (seqlen_q is total_q for varlen)
         batch_size, total_k, num_heads_k, head_size_v,  // K dims (seqlen_k is total_k for varlen)
@@ -273,7 +280,7 @@ int main(int argc, char** argv) {
             nullptr, nullptr, nullptr,
             nullptr, nullptr, nullptr,
             nullptr, nullptr, nullptr,
-            nullptr,
+            d_scheduler_metadata,
             is_bf16, is_e4m3,
             batch_size, total_q, num_heads, head_size,
             batch_size, total_k, num_heads_k, head_size_v,
@@ -319,6 +326,7 @@ int main(int argc, char** argv) {
     cudaFree(d_cu_seqlens_q);
     cudaFree(d_cu_seqlens_k);
     cudaFree(d_softmax_lse);
+    cudaFree(d_scheduler_metadata);
     cudaStreamDestroy(stream);
     cudaEventDestroy(start);
     cudaEventDestroy(stop);
