@@ -42,6 +42,8 @@ add_definitions(-DFLASHATTENTION_DISABLE_BACKWARD)
 add_definitions(-DFLASHATTENTION_DISABLE_SM8x)
 # 启用CUTLASS SM90a支持 (WGMMA指令)
 add_definitions(-DCUTE_ARCH_MMA_SM90A_ENABLED)
+# 禁用CUTLASS调试日志避免__host__ __device__冲突
+add_definitions(-DCUTLASS_DEBUG_TRACE_LEVEL=0)
 
 # 极简版本：只支持两种配置
 # - FP8 E4M3, head_dim=96
