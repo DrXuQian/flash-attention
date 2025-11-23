@@ -35,8 +35,8 @@ link_directories(
 # 编译选项
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3 --expt-relaxed-constexpr --extended-lambda")
 # 放宽host/device function call限制 (CUTLASS synclog __device__ from __host__ __device__)
-# 使用--no-host-device-initializer-list避免HD调用错误
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcudafe=--diag_suppress=20011,--diag_suppress=20014")
+# 诊断代码: 20011=calling __device__ from __host____device__, 20014=calling __host__ from __device__
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --diag-suppress 20011 --diag-suppress 20014")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 
 # 定义宏
@@ -56,8 +56,9 @@ add_definitions(-DCUTLASS_DEBUG_TRACE_LEVEL=0)
 # 编译时间: 1-2分钟，内存需求: 8GB
 
 # 自动收集这两种配置的所有变体（包括Split/PackGQA/Softcap/Paged等组合）
+# 注意: 只匹配 flash_fwd_hdim128_fp16_xxx_sm90.cu (FP16, 不含bf16)
 file(GLOB KERNEL_FP16_128
-    "instantiations/flash_fwd_hdim128_fp16*_sm90.cu"
+    "instantiations/flash_fwd_hdim128_fp16_*_sm90.cu"
 )
 file(GLOB KERNEL_FP8_96
     "instantiations/flash_fwd_hdim96_e4m3*_sm90.cu"
