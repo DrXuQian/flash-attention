@@ -135,43 +135,27 @@ set(KERNEL_SOURCES
 list(LENGTH KERNEL_SOURCES KERNEL_COUNT)
 message(STATUS "Compiling ${KERNEL_COUNT} commonly-used SM90 forward kernel variants")
 
-# 创建kernel对象库
-add_library(flash_kernels OBJECT ${KERNEL_SOURCES})
-set_target_properties(flash_kernels PROPERTIES
-    CUDA_SEPARABLE_COMPILATION ON
-    POSITION_INDEPENDENT_CODE ON
-)
-
-# 创建standalone API动态库
-add_library(flash_attn_standalone SHARED
-    flash_api_standalone.cpp
-    $<TARGET_OBJECTS:flash_kernels>
-)
-
-target_link_libraries(flash_attn_standalone
-    CUDA::cudart
-)
-
-# 设置输出目录
-set_target_properties(flash_attn_standalone PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-)
-
-# 创建测试程序
+# 直接创建可执行文件，不使用动态库
+# 这样可以让链接器在编译时解决所有符号引用，避免undefined reference
 add_executable(test_varlen_inference
     test_varlen_inference.cpp
+    flash_api_standalone.cpp
+    ${KERNEL_SOURCES}
+)
+
+# 设置CUDA分离编译
+set_target_properties(test_varlen_inference PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
 )
 
 target_link_libraries(test_varlen_inference
-    flash_attn_standalone
     CUDA::cudart
     CUDA::curand
 )
 
 # 安装规则
-install(TARGETS flash_attn_standalone
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
+install(TARGETS test_varlen_inference
+    RUNTIME DESTINATION bin
 )
 
 install(FILES flash_api_standalone.h

@@ -15,5 +15,6 @@ make -j4
 
 echo ""
 echo "编译完成！"
-echo "动态库: build_standalone/libflash_attn_standalone.so"
-echo "测试程序: build_standalone/test_varlen_inference"
+echo "可执行文件: build_standalone/test_varlen_inference"
+echo ""
+echo "说明: 直接编译为可执行文件，所有kernel代码已静态链接"
