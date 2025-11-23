@@ -36,6 +36,7 @@ nvcc -shared -O3 \
   -arch=sm_90 \
   flash_api_standalone.o \
   flash_fwd_hdim64_fp16_sm90.o \
+  -L${CUDA_PATH}/lib64 \
   -lcudart \
   -o libflash_attn_standalone.so
 

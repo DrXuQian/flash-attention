@@ -23,6 +23,11 @@ include_directories(
     ${CUTLASS_PATH}
 )
 
+# 库目录
+link_directories(
+    ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES}
+)
+
 # 编译选项
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3 --expt-relaxed-constexpr")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")

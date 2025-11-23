@@ -34,6 +34,7 @@ nvcc -std=c++17 -O3 \
   -arch=sm_90 \
   flash_api_standalone.o \
   test_varlen_inference.o \
+  -L${CUDA_PATH}/lib64 \
   -lcudart -lcurand \
   -o test_varlen_inference
 
