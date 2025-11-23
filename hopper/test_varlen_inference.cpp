@@ -68,15 +68,16 @@ void init_random_data_gpu(void* d_ptr, size_t num_elements, bool is_fp16, bool i
 
 int main(int argc, char** argv) {
     // Default parameters (can be overridden by command line arguments)
+    // NOTE: This build only supports FP16 hdim=128 and FP8 hdim=96
     int batch_size = 2;
     int max_seqlen_q = 512;
     int max_seqlen_k = 512;
     int num_heads = 8;
     int num_heads_k = 8;  // GQA: can be different from num_heads
-    int head_size = 64;
-    int head_size_v = 64;
+    int head_size = 128;  // Default to 128 for FP16 support
+    int head_size_v = 128;
     bool is_causal = false;
-    bool is_bf16 = true;
+    bool is_bf16 = false;  // Default to FP16 (BF16 not supported in this build)
     bool is_e4m3 = false;
 
     // Parse command line arguments
@@ -106,17 +107,20 @@ int main(int argc, char** argv) {
             is_e4m3 = true;
         } else if (strcmp(argv[i], "--help") == 0) {
             std::cout << "Usage: " << argv[0] << " [options]\n"
-                      << "Options:\n"
+                      << "\nNOTE: This build only supports:\n"
+                      << "  - FP16 with head_dim <= 128 (default)\n"
+                      << "  - FP8 E4M3 with head_dim <= 96\n"
+                      << "  - BF16 is NOT supported\n"
+                      << "\nOptions:\n"
                       << "  --batch_size N       Batch size (default: 2)\n"
                       << "  --max_seqlen_q N     Max sequence length for Q (default: 512)\n"
                       << "  --max_seqlen_k N     Max sequence length for K (default: 512)\n"
                       << "  --num_heads N        Number of query heads (default: 8)\n"
                       << "  --num_heads_k N      Number of key/value heads (default: 8)\n"
-                      << "  --head_size N        Head dimension (default: 64)\n"
+                      << "  --head_size N        Head dimension (default: 128 for FP16, use 96 for FP8)\n"
                       << "  --causal             Use causal attention (default: false)\n"
-                      << "  --fp16               Use FP16 (default: BF16)\n"
-                      << "  --bf16               Use BF16 (default)\n"
-                      << "  --fp8                Use FP8 E4M3\n"
+                      << "  --fp16               Use FP16 (default)\n"
+                      << "  --fp8                Use FP8 E4M3 (requires head_size <= 96)\n"
                       << "  --help               Show this help message\n";
             return 0;
         }
