@@ -403,7 +403,7 @@ void run_mha_fwd_standalone(Flash_fwd_params &params, cudaStream_t stream) {
 
 // Full version with ALL features - complete alignment with original mha_fwd
 // This function requires ~60+ parameters to fully replicate all features
-void mha_fwd_standalone(
+extern "C" void mha_fwd_standalone(
         // Q, K, V device pointers
         void* q_ptr,
         void* k_ptr,
