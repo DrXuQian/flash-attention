@@ -40,6 +40,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 add_definitions(-DFLASHATTENTION_DISABLE_BACKWARD)
 # 只编译SM90代码，禁用SM80/SM86分支，避免链接SM80/SM86 kernel
 add_definitions(-DFLASHATTENTION_DISABLE_SM8x)
+# 启用CUTLASS SM90a支持 (WGMMA指令)
+add_definitions(-DCUTE_ARCH_MMA_SM90A_ENABLED)
 
 # 极简版本：只支持两种配置
 # - FP8 E4M3, head_dim=96
