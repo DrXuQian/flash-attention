@@ -39,33 +39,19 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 # 定义宏
 add_definitions(-DFLASHATTENTION_DISABLE_BACKWARD)
 
-# 收集所有kernel实现文件 (完整版本，包含所有hdim和数据类型)
-set(KERNEL_SOURCES
-    # hdim64 kernels
-    instantiations/flash_fwd_hdim64_fp16_sm90.cu
-    instantiations/flash_fwd_hdim64_bf16_sm90.cu
-    instantiations/flash_fwd_hdim64_e4m3_sm90.cu
-
-    # hdim96 kernels
-    instantiations/flash_fwd_hdim96_fp16_sm90.cu
-    instantiations/flash_fwd_hdim96_bf16_sm90.cu
-    instantiations/flash_fwd_hdim96_e4m3_sm90.cu
-
-    # hdim128 kernels
-    instantiations/flash_fwd_hdim128_fp16_sm90.cu
-    instantiations/flash_fwd_hdim128_bf16_sm90.cu
-    instantiations/flash_fwd_hdim128_e4m3_sm90.cu
-
-    # hdim192 kernels
-    instantiations/flash_fwd_hdim192_fp16_sm90.cu
-    instantiations/flash_fwd_hdim192_bf16_sm90.cu
-    instantiations/flash_fwd_hdim192_e4m3_sm90.cu
-
-    # hdim256 kernels
-    instantiations/flash_fwd_hdim256_fp16_sm90.cu
-    instantiations/flash_fwd_hdim256_bf16_sm90.cu
-    instantiations/flash_fwd_hdim256_e4m3_sm90.cu
+# 收集所有SM90 forward kernel文件
+# 使用file(GLOB)自动收集所有forward kernel变体
+# 这样可以包含所有Split/PagedKV/Softcap/PackGQA组合，避免undefined reference
+file(GLOB KERNEL_SOURCES
+    "instantiations/flash_fwd_*_sm90.cu"
 )
+
+# 过滤掉backward kernels（虽然文件名不会匹配，但以防万一）
+list(FILTER KERNEL_SOURCES EXCLUDE REGEX "flash_bwd_")
+
+# 打印找到的kernel文件数量
+list(LENGTH KERNEL_SOURCES KERNEL_COUNT)
+message(STATUS "Found ${KERNEL_COUNT} SM90 forward kernel files for compilation")
 
 # 创建kernel对象库
 add_library(flash_kernels OBJECT ${KERNEL_SOURCES})
@@ -106,6 +92,6 @@ install(TARGETS flash_attn_standalone
     ARCHIVE DESTINATION lib
 )
 
-install(FILES flash_api_standalone.cpp
+install(FILES flash_api_standalone.h
     DESTINATION include
 )
