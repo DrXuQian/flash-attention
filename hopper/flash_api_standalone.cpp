@@ -272,115 +272,18 @@ void set_params_fprop_standalone(Flash_fwd_params &params,
     #endif
 }
 
+// Simplified version: only support FP8 E4M3 hdim=96 and FP16 hdim=128
 template <int Arch, int Split, bool PagedKVNonTMA, bool PackGQA, bool Has_softcap>
 void run_mha_fwd_constexpr(Flash_fwd_params &params, cudaStream_t stream) {
     if (!params.is_e4m3) {
-        if (params.is_bf16) {
-            #ifndef FLASHATTENTION_DISABLE_HDIM64
-            if (params.d <= 64) {
-                #ifndef FLASHATTENTION_DISABLE_HDIMDIFF64
-                if constexpr (Arch == 90) {
-                    if (params.dv > 256) {
-                        return run_mha_fwd_<Arch, cutlass::bfloat16_t, 64, 512, Split, PagedKVNonTMA, Has_softcap, PackGQA>(params, stream);
-                    } else if (params.dv > 64) {
-                        return run_mha_fwd_<Arch, cutlass::bfloat16_t, 64, 256, Split, PagedKVNonTMA, Has_softcap, PackGQA>(params, stream);
-                    }
-                }
-                #endif
-                return run_mha_fwd_<Arch, cutlass::bfloat16_t, 64, 64, Split, PagedKVNonTMA, Has_softcap, PackGQA>(params, stream);
-            }
-            #endif
-            #ifndef FLASHATTENTION_DISABLE_HDIM96
-            if (params.d <= 96) { return run_mha_fwd_<Arch, cutlass::bfloat16_t, 96, 96, Split, PagedKVNonTMA, Has_softcap, PackGQA>(params, stream); }
-            #endif
-            #ifndef FLASHATTENTION_DISABLE_HDIM128
-            if (params.d <= 128) { return run_mha_fwd_<Arch, cutlass::bfloat16_t, 128, 128, Split, PagedKVNonTMA, Has_softcap, PackGQA>(params, stream); }
-            #endif
-            #ifndef FLASHATTENTION_DISABLE_HDIM192
-            if (params.d <= 192) {
-                #ifndef FLASHATTENTION_DISABLE_HDIMDIFF192
-                if constexpr (Arch == 90) {
-                    if (params.dv <= 128) {
-                        return run_mha_fwd_<Arch, cutlass::bfloat16_t, 192, 128, Split, PagedKVNonTMA, Has_softcap, PackGQA>(params, stream);
-                    }
-                }
-                #endif
-                return run_mha_fwd_<Arch, cutlass::bfloat16_t, 192, 192, Split, PagedKVNonTMA, Has_softcap, PackGQA>(params, stream);
-            }
-            #endif
-            #ifndef FLASHATTENTION_DISABLE_HDIM256
-            if (params.d <= 256) { return run_mha_fwd_<Arch, cutlass::bfloat16_t, 256, 256, Split, PagedKVNonTMA, Has_softcap, PackGQA>(params, stream); }
-            #endif
-        } else {
-            #ifndef FLASHATTENTION_DISABLE_FP16
-            #ifndef FLASHATTENTION_DISABLE_HDIM64
-            if (params.d <= 64) {
-                #ifndef FLASHATTENTION_DISABLE_HDIMDIFF64
-                if constexpr (Arch == 90) {
-                    if (params.dv > 256) {
-                        return run_mha_fwd_<Arch, cutlass::half_t, 64, 512, Split, PagedKVNonTMA, Has_softcap, PackGQA>(params, stream);
-                    } else if (params.dv > 64) {
-                        return run_mha_fwd_<Arch, cutlass::half_t, 64, 256, Split, PagedKVNonTMA, Has_softcap, PackGQA>(params, stream);
-                    }
-                }
-                #endif
-                return run_mha_fwd_<Arch, cutlass::half_t, 64, 64, Split, PagedKVNonTMA, Has_softcap, PackGQA>(params, stream);
-            }
-            #endif
-            #ifndef FLASHATTENTION_DISABLE_HDIM96
-            if (params.d <= 96) { return run_mha_fwd_<Arch, cutlass::half_t, 96, 96, Split, PagedKVNonTMA, Has_softcap, PackGQA>(params, stream); }
-            #endif
-            #ifndef FLASHATTENTION_DISABLE_HDIM128
-            if (params.d <= 128) { return run_mha_fwd_<Arch, cutlass::half_t, 128, 128, Split, PagedKVNonTMA, Has_softcap, PackGQA>(params, stream); }
-            #endif
-            #ifndef FLASHATTENTION_DISABLE_HDIM192
-            if (params.d <= 192) {
-                #ifndef FLASHATTENTION_DISABLE_HDIMDIFF192
-                if constexpr (Arch == 90) {
-                    if (params.dv <= 128) {
-                        return run_mha_fwd_<Arch, cutlass::half_t, 192, 128, Split, PagedKVNonTMA, Has_softcap, PackGQA>(params, stream);
-                    }
-                }
-                #endif
-                return run_mha_fwd_<Arch, cutlass::half_t, 192, 192, Split, PagedKVNonTMA, Has_softcap, PackGQA>(params, stream);
-            }
-            #endif
-            #ifndef FLASHATTENTION_DISABLE_HDIM256
-            if (params.d <= 256) { return run_mha_fwd_<Arch, cutlass::half_t, 256, 256, Split, PagedKVNonTMA, Has_softcap, PackGQA>(params, stream); }
-            #endif
-            #else
-            CHECK_ASSERT(false, "This flash attention build does not support FP16.");
-            #endif
-        }
+        // Only support FP16 with hdim=128
+        CHECK_ASSERT(!params.is_bf16, "This build only supports FP16 (not BF16). Use is_bf16=false.");
+        CHECK_ASSERT(params.d <= 128, "This build only supports head_dim <= 128 for FP16.");
+        return run_mha_fwd_<Arch, cutlass::half_t, 128, 128, Split, PagedKVNonTMA, Has_softcap, PackGQA>(params, stream);
     } else {
-        #ifndef FLASHATTENTION_DISABLE_FP8
-        #ifndef FLASHATTENTION_DISABLE_HDIM64
-        if (params.d <= 64) { return run_mha_fwd_<90, cutlass::float_e4m3_t, 64, 64, Split, PagedKVNonTMA, Has_softcap, PackGQA>(params, stream); }
-        #endif
-        #ifndef FLASHATTENTION_DISABLE_HDIM96
-        if (params.d <= 96) { return run_mha_fwd_<90, cutlass::float_e4m3_t, 96, 96, Split, PagedKVNonTMA, Has_softcap, PackGQA>(params, stream); }
-        #endif
-        #ifndef FLASHATTENTION_DISABLE_HDIM128
-        if (params.d <= 128) { return run_mha_fwd_<90, cutlass::float_e4m3_t, 128, 128, Split, PagedKVNonTMA, Has_softcap, PackGQA>(params, stream); }
-        #endif
-        #ifndef FLASHATTENTION_DISABLE_HDIM192
-        if (params.d <= 192) {
-            #ifndef FLASHATTENTION_DISABLE_HDIMDIFF192
-            if constexpr (Arch == 90) {
-                if (params.dv <= 128) {
-                    return run_mha_fwd_<90, cutlass::float_e4m3_t, 192, 128, Split, PagedKVNonTMA, Has_softcap, PackGQA>(params, stream);
-                }
-            }
-            #endif
-            return run_mha_fwd_<90, cutlass::float_e4m3_t, 192, 192, Split, PagedKVNonTMA, Has_softcap, PackGQA>(params, stream);
-        }
-        #endif
-        #ifndef FLASHATTENTION_DISABLE_HDIM256
-        if (params.d <= 256) { return run_mha_fwd_<90, cutlass::float_e4m3_t, 256, 256, Split, PagedKVNonTMA, Has_softcap, PackGQA>(params, stream); }
-        #endif
-        #else
-        CHECK_ASSERT(false, "This flash attention build does not support FP8.");
-        #endif
+        // Only support FP8 E4M3 with hdim=96
+        CHECK_ASSERT(params.d <= 96, "This build only supports head_dim <= 96 for FP8 E4M3.");
+        return run_mha_fwd_<90, cutlass::float_e4m3_t, 96, 96, Split, PagedKVNonTMA, Has_softcap, PackGQA>(params, stream);
     }
 }
 

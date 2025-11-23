@@ -41,101 +41,26 @@ add_definitions(-DFLASHATTENTION_DISABLE_BACKWARD)
 # 只编译SM90代码，禁用SM80/SM86分支，避免链接SM80/SM86 kernel
 add_definitions(-DFLASHATTENTION_DISABLE_SM8x)
 
-# 方案2：只包含常用的kernel组合
-# 编译时间: 10-20分钟，内存需求: 16GB
-# 包含最常用的功能组合，避免编译所有280个kernel文件
+# 极简版本：只支持两种配置
+# - FP8 E4M3, head_dim=96
+# - FP16, head_dim=128
+# 编译时间: 1-2分钟，内存需求: 8GB
+
+# 自动收集这两种配置的所有变体（包括Split/PackGQA/Softcap/Paged等组合）
+file(GLOB KERNEL_FP16_128
+    "instantiations/flash_fwd_hdim128_fp16*_sm90.cu"
+)
+file(GLOB KERNEL_FP8_96
+    "instantiations/flash_fwd_hdim96_e4m3*_sm90.cu"
+)
 
 set(KERNEL_SOURCES
-    # 基础kernels（无特殊功能）- 必需
-    instantiations/flash_fwd_hdim64_fp16_sm90.cu
-    instantiations/flash_fwd_hdim64_bf16_sm90.cu
-    instantiations/flash_fwd_hdim64_e4m3_sm90.cu
-    instantiations/flash_fwd_hdim96_fp16_sm90.cu
-    instantiations/flash_fwd_hdim96_bf16_sm90.cu
-    instantiations/flash_fwd_hdim96_e4m3_sm90.cu
-    instantiations/flash_fwd_hdim128_fp16_sm90.cu
-    instantiations/flash_fwd_hdim128_bf16_sm90.cu
-    instantiations/flash_fwd_hdim128_e4m3_sm90.cu
-    instantiations/flash_fwd_hdim192_bf16_sm90.cu
-    instantiations/flash_fwd_hdim192_128_bf16_sm90.cu
-    instantiations/flash_fwd_hdim256_bf16_sm90.cu
-    instantiations/flash_fwd_hdim256_e4m3_sm90.cu
-
-    # PackGQA variants（用于GQA/MQA）- 常用
-    instantiations/flash_fwd_hdim64_fp16_packgqa_sm90.cu
-    instantiations/flash_fwd_hdim64_bf16_packgqa_sm90.cu
-    instantiations/flash_fwd_hdim128_fp16_packgqa_sm90.cu
-    instantiations/flash_fwd_hdim128_bf16_packgqa_sm90.cu
-    instantiations/flash_fwd_hdim128_e4m3_packgqa_sm90.cu
-    instantiations/flash_fwd_hdim192_e4m3_packgqa_sm90.cu
-
-    # Softcap variants（用于logit capping）- 较常用
-    instantiations/flash_fwd_hdim64_e4m3_softcap_sm90.cu
-    instantiations/flash_fwd_hdim96_bf16_softcap_sm90.cu
-    instantiations/flash_fwd_hdim128_e4m3_softcap_sm90.cu
-    instantiations/flash_fwd_hdim256_e4m3_softcap_sm90.cu
-
-    # Softcap + PackGQA组合 - 常用
-    instantiations/flash_fwd_hdim96_bf16_softcap_packgqa_sm90.cu
-    instantiations/flash_fwd_hdim96_fp16_softcap_packgqa_sm90.cu
-    instantiations/flash_fwd_hdim128_fp16_softcap_packgqa_sm90.cu
-    instantiations/flash_fwd_hdim128_bf16_softcap_packgqa_sm90.cu
-    instantiations/flash_fwd_hdim192_128_bf16_softcap_packgqa_sm90.cu
-    instantiations/flash_fwd_hdim192_e4m3_softcap_packgqa_sm90.cu
-
-    # Split variants（用于长序列）- 常用
-    instantiations/flash_fwd_hdim64_fp16_split_sm90.cu
-    instantiations/flash_fwd_hdim96_fp16_split_sm90.cu
-    instantiations/flash_fwd_hdim96_bf16_split_sm90.cu
-    instantiations/flash_fwd_hdim128_e4m3_split_sm90.cu
-    instantiations/flash_fwd_hdim192_bf16_split_sm90.cu
-
-    # Split + Softcap组合 - 常用于长序列with logit capping
-    instantiations/flash_fwd_hdim96_e4m3_split_softcap_sm90.cu
-    instantiations/flash_fwd_hdim128_fp16_split_softcap_sm90.cu
-    instantiations/flash_fwd_hdim128_e4m3_split_softcap_sm90.cu
-    instantiations/flash_fwd_hdim192_128_e4m3_split_softcap_sm90.cu
-    instantiations/flash_fwd_hdim256_fp16_split_softcap_sm90.cu
-    instantiations/flash_fwd_hdim256_bf16_split_softcap_sm90.cu
-
-    # Paged KV variants（用于KV cache管理）- 常用
-    instantiations/flash_fwd_hdim128_bf16_paged_sm90.cu
-    instantiations/flash_fwd_hdim128_e4m3_paged_sm90.cu
-    instantiations/flash_fwd_hdim192_bf16_paged_sm90.cu
-
-    # Paged + Softcap组合
-    instantiations/flash_fwd_hdim96_bf16_paged_softcap_sm90.cu
-    instantiations/flash_fwd_hdim128_fp16_paged_softcap_sm90.cu
-    instantiations/flash_fwd_hdim128_e4m3_paged_softcap_sm90.cu
-    instantiations/flash_fwd_hdim192_128_e4m3_paged_softcap_sm90.cu
-    instantiations/flash_fwd_hdim256_bf16_paged_softcap_sm90.cu
-    instantiations/flash_fwd_hdim256_e4m3_paged_softcap_sm90.cu
-
-    # Paged + Split组合（用于长序列 + KV cache）
-    instantiations/flash_fwd_hdim96_bf16_paged_split_sm90.cu
-    instantiations/flash_fwd_hdim128_bf16_paged_split_sm90.cu
-    instantiations/flash_fwd_hdim128_fp16_paged_split_sm90.cu
-    instantiations/flash_fwd_hdim192_e4m3_paged_split_sm90.cu
-
-    # Paged + Split + Softcap组合（全功能）
-    instantiations/flash_fwd_hdim64_fp16_paged_split_softcap_sm90.cu
-    instantiations/flash_fwd_hdim96_fp16_paged_split_softcap_sm90.cu
-    instantiations/flash_fwd_hdim128_fp16_paged_split_softcap_sm90.cu
-    instantiations/flash_fwd_hdim128_e4m3_paged_split_softcap_sm90.cu
-    instantiations/flash_fwd_hdim192_e4m3_paged_split_softcap_sm90.cu
-
-    # 特殊hdimV变体（用于不同的head dimension）
-    instantiations/flash_fwd_hdim64_256_fp16_sm90.cu
-    instantiations/flash_fwd_hdim64_256_bf16_sm90.cu
-    instantiations/flash_fwd_hdim64_256_fp16_softcap_sm90.cu
-    instantiations/flash_fwd_hdim64_256_fp16_split_softcap_sm90.cu
-    instantiations/flash_fwd_hdim64_512_fp16_split_softcap_sm90.cu
-    instantiations/flash_fwd_hdim64_512_bf16_split_softcap_sm90.cu
-    instantiations/flash_fwd_hdim192_128_fp16_softcap_sm90.cu
+    ${KERNEL_FP16_128}
+    ${KERNEL_FP8_96}
 )
 
 list(LENGTH KERNEL_SOURCES KERNEL_COUNT)
-message(STATUS "Compiling ${KERNEL_COUNT} commonly-used SM90 forward kernel variants")
+message(STATUS "Compiling ${KERNEL_COUNT} kernel variants (FP16 hdim128 + FP8 hdim96)")
 
 # 直接创建可执行文件，不使用动态库
 # 这样可以让链接器在编译时解决所有符号引用，避免undefined reference
