@@ -67,6 +67,7 @@ message(STATUS "Compiling ${KERNEL_COUNT} kernel variants (FP16 hdim128 + FP8 hd
 add_executable(test_varlen_inference
     test_varlen_inference.cpp
     flash_api_standalone.cpp
+    flash_prepare_scheduler.cu
     ${KERNEL_SOURCES}
 )
 
